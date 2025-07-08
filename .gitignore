@@ -369,3 +369,8 @@ FodyWeavers.xsd
 # Project specific ignores
 assemble/
 ToAI.png
+
+# Compiled mod files
+Interface/bin/
+Interface/obj/
+packages/

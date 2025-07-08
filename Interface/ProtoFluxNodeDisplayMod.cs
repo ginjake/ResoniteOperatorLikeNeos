@@ -153,10 +153,15 @@ namespace ProtoFluxNodeDisplayMod
 			{ "AddMulti", "+" },
 			{ "Sub", "-" },
 			{ "SubMulti", "-" },
+			{ "ValueSubMulti", "-" },
+			{ "ValueSubMulti<T>", "-" },
 			{ "Mul", "×" },
 			{ "MulMulti", "×" },
+			{ "ValueMulMulti", "×" },
+			{ "ValueMulMulti<T>", "×" },
 			{ "Div", "÷" },
 			{ "ValueMod", "%" },
+			{ "ValueMod<T>", "%" },
 			
 			// 比較演算
 			{ "Equals", "==" },
@@ -177,18 +182,26 @@ namespace ProtoFluxNodeDisplayMod
 			
 			// 数値変換
 			{ "ValueSquare", "x²" },
+			{ "ValueSquare<T>", "x²" },
 			{ "ValueCube", "x³" },
+			{ "ValueCube<T>", "x³" },
 			{ "ValueReciprocal", "1/x" },
+			{ "ValueReciprocal<T>", "1/x" },
 			{ "Inverse", "A⁻¹" },
 			{ "ValueNegate", "-n" },
+			{ "ValueNegate<T>", "-n" },
 			{ "ValueOneMinus", "1-x" },
+			{ "ValueOneMinus<T>", "1-x" },
 			{ "ValuePlusMinus", "+/-" },
+			{ "ValuePlusMinus<T>", "+/-" },
 			{ "Magnitude", "|V|" },
 			{ "SqrMagnitude", "|V|²" },
 			{ "Dot", "·" },
 			{ "Angle", "°" },
 			{ "ValueInc", "+1" },
+			{ "ValueInc<T>", "+1" },
 			{ "ValueDec", "-1" },
+			{ "ValueDec<T>", "-1" },
 			
 			// ビット演算
 			{ "ShiftLeft", "<<" },
@@ -209,20 +222,14 @@ namespace ProtoFluxNodeDisplayMod
 			if (textComponent?.Slot == null)
 				return false;
 			
-			// Check if this text is descendant of a slot with ComponentSelector component
+			// ONLY enhance text that is descendant of a slot with ComponentSelector component
 			if (IsDescendantOfComponentSelector(textComponent.Slot))
 			{
 				Msg($"Found Text as descendant of ComponentSelector: {textComponent.Content.Value}");
 				return true;
 			}
 			
-			// Alternative: Check if this text is descendant of "Node Browser" slot
-			if (IsDescendantOfNodeBrowser(textComponent.Slot))
-			{
-				Msg($"Found Text as descendant of Node Browser: {textComponent.Content.Value}");
-				return true;
-			}
-			
+			// Do NOT enhance other text (removed Node Browser fallback)
 			return false;
 		}
 		
@@ -351,15 +358,16 @@ namespace ProtoFluxNodeDisplayMod
 				if (ProtoFluxNodeDisplayMod.Config?.GetValue(ProtoFluxNodeDisplayMod.enabled) != true)
 					return true;
 				
-				// Check if this Sync<string> belongs to a Text component's Content field
-				if (IsTextContentField(__instance))
+				// Check if this Sync<string> belongs to a Text component's Content field in ComponentSelector context
+				var textComponent = GetTextComponentFromSync(__instance);
+				if (textComponent != null && ProtoFluxNodeDisplayMod.ShouldEnhanceText(textComponent))
 				{
 					// Try to enhance the text content
 					string enhancedValue = ProtoFluxNodeDisplayMod.GetEnhancedTextContent(value);
 					if (enhancedValue != value)
 					{
 						value = enhancedValue;
-						ProtoFluxNodeDisplayMod.Msg($"Enhanced text: {enhancedValue}");
+						ProtoFluxNodeDisplayMod.Msg($"Enhanced ComponentSelector text: {value}");
 					}
 				}
 			}
@@ -397,7 +405,7 @@ namespace ProtoFluxNodeDisplayMod
 			}
 		}
 		
-		private static bool IsTextContentField(FrooxEngine.Sync<string> sync)
+		private static Text GetTextComponentFromSync(FrooxEngine.Sync<string> sync)
 		{
 			try
 			{
@@ -409,7 +417,10 @@ namespace ProtoFluxNodeDisplayMod
 					if (worker is Text textComponent)
 					{
 						// Check if this sync instance is the Content field
-						return ReferenceEquals(textComponent.Content, sync);
+						if (ReferenceEquals(textComponent.Content, sync))
+						{
+							return textComponent;
+						}
 					}
 				}
 				
@@ -420,16 +431,26 @@ namespace ProtoFluxNodeDisplayMod
 					var name = nameProperty.GetValue(sync) as string;
 					if (name == "Content")
 					{
-						ProtoFluxNodeDisplayMod.Msg($"Found sync field named 'Content'");
-						return true;
+						// Try to find Text component that owns this sync
+						var allTexts = Engine.Current?.WorldManager?.FocusedWorld?.RootSlot?.GetComponentsInChildren<Text>();
+						if (allTexts != null)
+						{
+							foreach (var text in allTexts)
+							{
+								if (ReferenceEquals(text.Content, sync))
+								{
+									return text;
+								}
+							}
+						}
 					}
 				}
 			}
-			catch (Exception ex)
+			catch
 			{
-				ProtoFluxNodeDisplayMod.Msg($"Error in IsTextContentField: {ex.Message}");
+				// Ignore errors in this helper method
 			}
-			return false;
+			return null;
 		}
 	}
 }

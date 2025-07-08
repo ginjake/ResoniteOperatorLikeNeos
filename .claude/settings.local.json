@@ -8,7 +8,9 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(dotnet build)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

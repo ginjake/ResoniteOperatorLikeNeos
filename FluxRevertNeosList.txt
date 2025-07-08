@@ -5,9 +5,9 @@ NeosVR ⇔ Resonite ProtoFlux 対応表
 | +          | Add                 |
 | +          | AddMulti            |
 | -          | Sub                 |
-| -          | SubMulti            |
+| -          | ValueSubMulti            |
 | ×          | Mul                 |
-| ×          | MulMulti            |
+| ×          | ValueMulMulti            |
 | ÷          | Div                 |
 | %          | ValueMod            |
 | ==         | Equals              |
