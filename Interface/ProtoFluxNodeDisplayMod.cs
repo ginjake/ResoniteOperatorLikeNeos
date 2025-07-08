@@ -223,14 +223,7 @@ namespace ProtoFluxNodeDisplayMod
 				return false;
 			
 			// ONLY enhance text that is descendant of a slot with ComponentSelector component
-			if (IsDescendantOfComponentSelector(textComponent.Slot))
-			{
-				Msg($"Found Text as descendant of ComponentSelector: {textComponent.Content.Value}");
-				return true;
-			}
-			
-			// Do NOT enhance other text (removed Node Browser fallback)
-			return false;
+			return IsDescendantOfComponentSelector(textComponent.Slot);
 		}
 		
 		private static bool IsDescendantOfComponentSelector(Slot slot)
@@ -240,10 +233,7 @@ namespace ProtoFluxNodeDisplayMod
 			while (currentSlot != null)
 			{
 				if (currentSlot.GetComponent<ComponentSelector>() != null)
-				{
-					Msg($"Found ComponentSelector on ancestor slot: {currentSlot.Name}");
 					return true;
-				}
 				currentSlot = currentSlot.Parent;
 			}
 			return false;
@@ -256,10 +246,7 @@ namespace ProtoFluxNodeDisplayMod
 			while (currentSlot != null)
 			{
 				if (currentSlot.Name == "Node Browser")
-				{
-					Msg($"Found Node Browser ancestor slot: {currentSlot.Name}");
 					return true;
-				}
 				currentSlot = currentSlot.Parent;
 			}
 			return false;
@@ -289,7 +276,6 @@ namespace ProtoFluxNodeDisplayMod
 				// Format: NeosSymbol(ResoniteNodeName)
 				string enhancedContent = $"{neosSymbol}({originalContent})";
 				_textContentCache[originalContent] = enhancedContent;
-				Msg($"Enhanced: {originalContent} -> {enhancedContent}");
 				return enhancedContent;
 			}
 			
@@ -367,7 +353,6 @@ namespace ProtoFluxNodeDisplayMod
 					if (enhancedValue != value)
 					{
 						value = enhancedValue;
-						ProtoFluxNodeDisplayMod.Msg($"Enhanced ComponentSelector text: {value}");
 					}
 				}
 			}
@@ -396,7 +381,6 @@ namespace ProtoFluxNodeDisplayMod
 				if (enhancedContent != originalContent)
 				{
 					__instance.Content.Value = enhancedContent;
-					ProtoFluxNodeDisplayMod.Msg($"Enhanced on awake: {originalContent} -> {enhancedContent}");
 				}
 			}
 			catch (Exception ex)
