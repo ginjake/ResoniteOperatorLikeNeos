@@ -2,6 +2,8 @@
 
 A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://store.steampowered.com/app/2519830/Resonite/)
 
+![image](https://github.com/user-attachments/assets/39e99d72-ac40-4818-b7df-ea3054e86de7)
+
 ## What is this?
 
 This mod changes ProtoFlux operator display from English names to NeosVR-style symbolic notation in the ProtoFlux browser.
@@ -30,13 +32,3 @@ The mod will automatically enhance ProtoFlux node names in the ComponentSelector
 - Includes logical operators: `&`, `|`, `^`, `!`
 - Includes bitwise operations: `<<`, `>>`, `ROL`, `ROR`
 
-## Technical Details
-
-- Uses HarmonyLib to patch `Sync<string>.Value` setter and `Text.OnAwake`
-- Targets only Text components that are descendants of ComponentSelector
-- Caches converted text for performance
-- Comprehensive mapping table based on NeosVR ⇔ Resonite ProtoFlux correspondence
-
-## Credits
-
-Modified from VarjoEyeIntegration template by ginjake.
