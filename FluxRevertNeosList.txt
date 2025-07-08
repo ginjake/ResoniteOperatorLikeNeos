@@ -1,0 +1,49 @@
+NeosVR ⇔ Resonite ProtoFlux 対応表
+
+| NeosVR     | Resonite            |
+|------------|---------------------|
+| +          | Add                 |
+| +          | AddMulti            |
+| -          | Sub                 |
+| -          | SubMulti            |
+| ×          | Mul                 |
+| ×          | MulMulti            |
+| ÷          | Div                 |
+| %          | ValueMod            |
+| ==         | Equals              |
+| !=         | NotEquals           |
+| <          | LessThan            |
+| ≤          | LessOrEqual         |
+| >          | GreaterThan         |
+| ≥          | GreaterOrEqual      |
+| ≈          | Approximately       |
+| !≈         | ApproximatelyNot    |
+| &          | AND                 |
+| |          | OR                  |
+| |          | OR_Multi            |
+| ^          | XOR                 |
+| !          | NOT                 |
+| x²         | ValueSquare         |
+| x³         | ValueCube           |
+| 1/x        | ValueReciprocal     |
+| A⁻¹        | Inverse             |
+| -n         | ValueNegate         |
+| 1-x        | ValueOneMinus       |
+| +/-        | ValuePlusMinus      |
+| |V|        | Magnitude           |
+| |V|²       | SqrMagnitude        |
+| ·          | Dot                 |
+| °          | Angle               |
+| +1         | ValueInc            |
+| -1         | ValueDec            |
+| <<         | ShiftLeft           |
+| >>         | ShiftRight          |
+| ROL        | RotateLeft          |
+| ROR        | RotateRight         |
+| ?:         | Conditional         |
+
+【Time 系】
+| NeosVR     | Resonite          |
+|------------|-------------------|
+| ×dT        | MulDeltaTime      |
+| ÷dT        | DivDeltaTime      |
