@@ -13,8 +13,8 @@ namespace ProtoFluxNodeDisplayMod
 	public class ProtoFluxNodeDisplayMod : ResoniteMod
 	{
 		public override string Name => "ProtoFluxNodeDisplayMod";
-		public override string Author => "Modified from VarjoEyeIntegration";
-		public override string Version => "2.0.0";
+		public override string Author => "ginjake";
+		public override string Version => "1.0.1";
 		public override string Link => "https://github.com/ginjake/ResoniteOperatorLikeNeos";
 		
 		public static ModConfiguration Config;
@@ -47,14 +47,8 @@ namespace ProtoFluxNodeDisplayMod
 		{
 			try
 			{
-				// Now we know: Text.Content is a Sync<string> field, not a property
-				// We need to patch the Sync<string>.Value property setter instead
-				
-				// Find Sync<string> type
+				// Patch Sync<string>.Value setter to catch when text content is actually set
 				var syncStringType = typeof(FrooxEngine.Sync<string>);
-				Msg($"Found Sync<string> type: {syncStringType.FullName}");
-				
-				// Get Value property setter
 				var valueProperty = syncStringType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
 				if (valueProperty != null)
 				{
@@ -65,16 +59,6 @@ namespace ProtoFluxNodeDisplayMod
 						harmony.Patch(valueSetter, prefix: new HarmonyMethod(prefix));
 						Msg("Successfully patched Sync<string>.Value setter");
 					}
-				}
-				
-				// Also patch Text.OnAwake to force change existing text
-				var textType = typeof(Text);
-				var onAwakeMethod = textType.GetMethod("OnAwake", BindingFlags.NonPublic | BindingFlags.Instance);
-				if (onAwakeMethod != null)
-				{
-					var postfix = typeof(UIPatches).GetMethod(nameof(UIPatches.TextOnAwakePostfix), BindingFlags.Static | BindingFlags.Public);
-					harmony.Patch(onAwakeMethod, postfix: new HarmonyMethod(postfix));
-					Msg("Successfully patched Text.OnAwake");
 				}
 				
 				Msg("Applied UI component patches");
@@ -146,7 +130,7 @@ namespace ProtoFluxNodeDisplayMod
 		private static Dictionary<string, string> _textContentCache = new Dictionary<string, string>();
 		
 		// NeosVR ⇔ Resonite ProtoFlux対応表
-		private static readonly Dictionary<string, string> _resoniteToNeosMap = new Dictionary<string, string>
+		public static readonly Dictionary<string, string> _resoniteToNeosMap = new Dictionary<string, string>
 		{
 			// 数値演算
 			{ "Add", "+" },
@@ -226,7 +210,7 @@ namespace ProtoFluxNodeDisplayMod
 			return IsDescendantOfComponentSelector(textComponent.Slot);
 		}
 		
-		private static bool IsDescendantOfComponentSelector(Slot slot)
+		public static bool IsDescendantOfComponentSelector(Slot slot)
 		{
 			// Check ancestors for ComponentSelector component
 			Slot currentSlot = slot;
@@ -273,8 +257,8 @@ namespace ProtoFluxNodeDisplayMod
 			// Check if this is a Resonite ProtoFlux node name that should be converted to NeosVR style
 			if (_resoniteToNeosMap.TryGetValue(originalContent, out string neosSymbol))
 			{
-				// Format: NeosSymbol(ResoniteNodeName)
-				string enhancedContent = $"{neosSymbol}({originalContent})";
+				// Format: ResoniteNodeName (NeosSymbol)
+				string enhancedContent = $"{originalContent} ({neosSymbol})";
 				_textContentCache[originalContent] = enhancedContent;
 				return enhancedContent;
 			}
@@ -344,95 +328,79 @@ namespace ProtoFluxNodeDisplayMod
 				if (ProtoFluxNodeDisplayMod.Config?.GetValue(ProtoFluxNodeDisplayMod.enabled) != true)
 					return true;
 				
-				// Check if this Sync<string> belongs to a Text component's Content field in ComponentSelector context
+				// Only process non-empty strings that could be node names
+				if (string.IsNullOrEmpty(value) || value.Length > 30)
+					return true;
+				
+				// Only process if we have a mapping for this value
+				if (!ProtoFluxNodeDisplayMod._resoniteToNeosMap.ContainsKey(value))
+					return true;
+				
+				// Find the Text component that owns this sync
 				var textComponent = GetTextComponentFromSync(__instance);
 				if (textComponent != null && ProtoFluxNodeDisplayMod.ShouldEnhanceText(textComponent))
 				{
-					// Try to enhance the text content
 					string enhancedValue = ProtoFluxNodeDisplayMod.GetEnhancedTextContent(value);
 					if (enhancedValue != value)
 					{
 						value = enhancedValue;
+						return true;
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				ProtoFluxNodeDisplayMod.Error($"Error in Sync<string> Value prefix: {ex.Message}");
+				ProtoFluxNodeDisplayMod.Error($"Error in SyncStringValuePrefix: {ex.Message}");
 			}
 			
-			return true; // Continue with original method
-		}
-		
-		public static void TextOnAwakePostfix(Text __instance)
-		{
-			try
-			{
-				if (ProtoFluxNodeDisplayMod.Config?.GetValue(ProtoFluxNodeDisplayMod.enabled) != true)
-					return;
-				
-				// Only process text in ProtoFlux context
-				if (!ProtoFluxNodeDisplayMod.ShouldEnhanceText(__instance))
-					return;
-				
-				string originalContent = __instance.Content.Value;
-				string enhancedContent = ProtoFluxNodeDisplayMod.GetEnhancedTextContent(originalContent);
-				
-				if (enhancedContent != originalContent)
-				{
-					__instance.Content.Value = enhancedContent;
-				}
-			}
-			catch (Exception ex)
-			{
-				ProtoFluxNodeDisplayMod.Error($"Error in Text OnAwake postfix: {ex.Message}");
-			}
+			return true;
 		}
 		
 		private static Text GetTextComponentFromSync(FrooxEngine.Sync<string> sync)
 		{
 			try
 			{
-				// Use reflection to get the parent Worker (component) from Sync field
-				var workerField = sync.GetType().BaseType?.GetField("_worker", BindingFlags.NonPublic | BindingFlags.Instance);
+				var syncType = sync.GetType();
+				
+				// Method 1: Check _worker field in base type
+				var workerField = syncType.BaseType?.GetField("_worker", BindingFlags.NonPublic | BindingFlags.Instance);
 				if (workerField != null)
 				{
 					var worker = workerField.GetValue(sync);
-					if (worker is Text textComponent)
+					if (worker is Text textComponent && ReferenceEquals(textComponent.Content, sync))
 					{
-						// Check if this sync instance is the Content field
-						if (ReferenceEquals(textComponent.Content, sync))
-						{
-							return textComponent;
-						}
+						return textComponent;
 					}
 				}
 				
-				// Alternative: check by field name if reflection fails
-				var nameProperty = sync.GetType().GetProperty("Name", BindingFlags.Public | BindingFlags.Instance);
-				if (nameProperty != null)
+				// Method 2: Try different field names
+				var parentField = syncType.BaseType?.GetField("_parent", BindingFlags.NonPublic | BindingFlags.Instance);
+				if (parentField != null)
 				{
-					var name = nameProperty.GetValue(sync) as string;
-					if (name == "Content")
+					var parent = parentField.GetValue(sync);
+					if (parent is Text textComponent && ReferenceEquals(textComponent.Content, sync))
 					{
-						// Try to find Text component that owns this sync
-						var allTexts = Engine.Current?.WorldManager?.FocusedWorld?.RootSlot?.GetComponentsInChildren<Text>();
-						if (allTexts != null)
+						return textComponent;
+					}
+				}
+				
+				// Method 3: Search all Text components in the world for this sync (fallback)
+				var world = Engine.Current?.WorldManager?.FocusedWorld;
+				if (world != null)
+				{
+					var allTexts = world.RootSlot.GetComponentsInChildren<Text>();
+					foreach (var text in allTexts)
+					{
+						if (ReferenceEquals(text.Content, sync))
 						{
-							foreach (var text in allTexts)
-							{
-								if (ReferenceEquals(text.Content, sync))
-								{
-									return text;
-								}
-							}
+							return text;
 						}
 					}
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
-				// Ignore errors in this helper method
+				ProtoFluxNodeDisplayMod.Error($"Error in GetTextComponentFromSync: {ex.Message}");
 			}
 			return null;
 		}

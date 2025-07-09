@@ -9,10 +9,10 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 This mod changes ProtoFlux operator display from English names to NeosVR-style symbolic notation in the ProtoFlux browser.
 
 For example:
-- `Add` → `+(Add)`
-- `LessThan` → `<(LessThan)`
-- `RotateLeft` → `ROL(RotateLeft)`
-- `ValueSquare` → `x²(ValueSquare)`
+- `Add` → `Add (+)`
+- `LessThan` → `LessThan (<)`
+- `RotateLeft` → `RotateLeft (ROL)`
+- `ValueSquare` → `ValueSquare (x²)`
 
 ## How to install
 
@@ -31,4 +31,16 @@ The mod will automatically enhance ProtoFlux node names in the ComponentSelector
 - Includes comparison operators: `<`, `>`, `≤`, `≥`, `==`, `!=`, `≈`
 - Includes logical operators: `&`, `|`, `^`, `!`
 - Includes bitwise operations: `<<`, `>>`, `ROL`, `ROR`
+
+## ⚠️ Important Notes
+
+**This mod is still in development and may be unstable. Use at your own risk.**
+
+### Known Issues
+- **Performance Impact**: Frame rate drops may occur in areas with many users due to text processing overhead
+- **Compatibility**: May conflict with other UI-modifying mods
+
+### Recent Fixes
+- **v2.0.1**: Fixed significant frame rate drops in multiplayer environments
+- **v2.0.0**: Optimized text processing to reduce performance impact
 
