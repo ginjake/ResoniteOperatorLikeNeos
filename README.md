@@ -41,6 +41,9 @@ The mod will automatically enhance ProtoFlux node names in the ComponentSelector
 - **Compatibility**: May conflict with other UI-modifying mods
 
 ### Recent Fixes
-- **v2.0.1**: Fixed significant frame rate drops in multiplayer environments
-- **v2.0.0**: Optimized text processing to reduce performance impact
+- **v1.1.0**: Make sure arithmetic and comparison operators are used in sequence.
+Prevent unintended replacements during type lookups.
+
+- **v1.0.1**: Fixed significant frame rate drops in multiplayer environments
+- **v1.0.0**: Optimized text processing to reduce performance impact
 
