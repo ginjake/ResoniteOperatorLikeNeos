@@ -129,6 +129,21 @@ namespace ProtoFluxNodeDisplayMod
 
 		private static Dictionary<string, string> _textContentCache = new Dictionary<string, string>();
 		
+		// 数値演算ノード名
+		public static readonly HashSet<string> _arithmeticNodes = new HashSet<string>
+		{
+			"Add", "AddMulti", "Sub", "SubMulti", "ValueSubMulti", "ValueSubMulti<T>",
+			"Mul", "MulMulti", "ValueMulMulti", "ValueMulMulti<T>", 
+			"Div", "ValueMod", "ValueMod<T>"
+		};
+		
+		// 比較演算ノード名
+		public static readonly HashSet<string> _comparisonNodes = new HashSet<string>
+		{
+			"Equals", "NotEquals", "LessThan", "LessOrEqual", 
+			"GreaterThan", "GreaterOrEqual", "Approximately", "ApproximatelyNot"
+		};
+		
 		// NeosVR ⇔ Resonite ProtoFlux対応表
 		public static readonly Dictionary<string, string> _resoniteToNeosMap = new Dictionary<string, string>
 		{
@@ -257,8 +272,25 @@ namespace ProtoFluxNodeDisplayMod
 			// Check if this is a Resonite ProtoFlux node name that should be converted to NeosVR style
 			if (_resoniteToNeosMap.TryGetValue(originalContent, out string neosSymbol))
 			{
-				// Format: ResoniteNodeName (NeosSymbol)
-				string enhancedContent = $"{originalContent} ({neosSymbol})";
+				string enhancedContent;
+				
+				// Format based on node type
+				if (_arithmeticNodes.Contains(originalContent))
+				{
+					// Format: <symbol> OriginalName
+					enhancedContent = $"({neosSymbol}) {originalContent}";
+				}
+				else if (_comparisonNodes.Contains(originalContent))
+				{
+					// Format: (symbol) OriginalName
+					enhancedContent = $"[{neosSymbol}] {originalContent}";
+				}
+				else
+				{
+					// Format: OriginalName (symbol)
+					enhancedContent = $"{originalContent} ({neosSymbol})";
+				}
+				
 				_textContentCache[originalContent] = enhancedContent;
 				return enhancedContent;
 			}
