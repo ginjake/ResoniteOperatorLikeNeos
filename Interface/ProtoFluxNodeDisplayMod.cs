@@ -221,6 +221,11 @@ namespace ProtoFluxNodeDisplayMod
 			if (textComponent?.Slot == null)
 				return false;
 			
+			// Check if parent or grandparent slot is named "Split" - if so, don't enhance
+			if (textComponent.Slot.Parent?.Name == "Split" || 
+			    textComponent.Slot.Parent?.Parent?.Name == "Split")
+				return false;
+			
 			// ONLY enhance text that is descendant of a slot with ComponentSelector component
 			return IsDescendantOfComponentSelector(textComponent.Slot);
 		}
