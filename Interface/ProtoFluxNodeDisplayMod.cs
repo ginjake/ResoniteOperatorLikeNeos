@@ -34,8 +34,6 @@ namespace ProtoFluxNodeDisplayMod
 				
 				// Apply UI component patches
 				ApplyUIPatches(harmony);
-				
-				Msg("ProtoFlux Node Display Mod initialized with UI approach");
 			}
 			catch (Exception ex)
 			{
@@ -57,11 +55,8 @@ namespace ProtoFluxNodeDisplayMod
 					{
 						var prefix = typeof(UIPatches).GetMethod(nameof(UIPatches.SyncStringValuePrefix), BindingFlags.Static | BindingFlags.Public);
 						harmony.Patch(valueSetter, prefix: new HarmonyMethod(prefix));
-						Msg("Successfully patched Sync<string>.Value setter");
 					}
 				}
-				
-				Msg("Applied UI component patches");
 			}
 			catch (Exception ex)
 			{
@@ -69,63 +64,6 @@ namespace ProtoFluxNodeDisplayMod
 			}
 		}
 		
-		private void AnalyzeTextComponent()
-		{
-			try
-			{
-				var textType = typeof(Text);
-				Msg($"=== TEXT COMPONENT ANALYSIS ===");
-				Msg($"Full name: {textType.FullName}");
-				Msg($"Assembly: {textType.Assembly.FullName}");
-				Msg($"Base type: {textType.BaseType?.FullName}");
-				
-				// Analyze properties
-				Msg($"\n=== PROPERTIES ===");
-				var properties = textType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-				foreach (var prop in properties)
-				{
-					Msg($"{prop.Name}: {prop.PropertyType.Name} - CanRead: {prop.CanRead}, CanWrite: {prop.CanWrite}");
-					if (prop.Name == "Content")
-					{
-						Msg($"  Content property type: {prop.PropertyType.FullName}");
-						Msg($"  Content base type: {prop.PropertyType.BaseType?.FullName}");
-						
-						// Analyze Content property's Value property
-						var contentValueProp = prop.PropertyType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
-						if (contentValueProp != null)
-						{
-							Msg($"  Content.Value property: {contentValueProp.PropertyType.FullName}");
-							Msg($"  Content.Value setter: {contentValueProp.GetSetMethod()?.Name}");
-						}
-					}
-				}
-				
-				// Analyze methods
-				Msg($"\n=== METHODS ===");
-				var methods = textType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-					.Where(m => m.Name.Contains("Awake") || m.Name.Contains("Start") || m.Name.Contains("Update") || m.Name.Contains("Attach") || m.Name.Contains("Init"))
-					.OrderBy(m => m.Name);
-				
-				foreach (var method in methods)
-				{
-					Msg($"{method.Name}({string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name))})");
-				}
-				
-				// Analyze Content field structure if it exists
-				var contentField = textType.GetField("Content", BindingFlags.Public | BindingFlags.Instance);
-				if (contentField != null)
-				{
-					Msg($"\n=== CONTENT FIELD ===");
-					Msg($"Content field type: {contentField.FieldType.FullName}");
-				}
-				
-				Msg($"=== END ANALYSIS ===");
-			}
-			catch (Exception ex)
-			{
-				Error($"Error analyzing Text component: {ex.Message}");
-			}
-		}
 
 		private static Dictionary<string, string> _textContentCache = new Dictionary<string, string>();
 		
@@ -387,7 +325,7 @@ namespace ProtoFluxNodeDisplayMod
 			}
 			catch (Exception ex)
 			{
-				ProtoFluxNodeDisplayMod.Error($"Error in SyncStringValuePrefix: {ex.Message}");
+				// Silent error handling - only log critical errors
 			}
 			
 			return true;
@@ -437,7 +375,7 @@ namespace ProtoFluxNodeDisplayMod
 			}
 			catch (Exception ex)
 			{
-				ProtoFluxNodeDisplayMod.Error($"Error in GetTextComponentFromSync: {ex.Message}");
+				// Silent error handling
 			}
 			return null;
 		}
