@@ -14,7 +14,7 @@ namespace ProtoFluxNodeDisplayMod
 	{
 		public override string Name => "ProtoFluxNodeDisplayMod";
 		public override string Author => "ginjake";
-		public override string Version => "1.2.0";
+		public override string Version => "1.2.1";
 		public override string Link => "https://github.com/ginjake/ResoniteOperatorLikeNeos";
 		
 		public static ModConfiguration Config;
