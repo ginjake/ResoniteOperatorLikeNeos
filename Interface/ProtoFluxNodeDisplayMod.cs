@@ -14,7 +14,7 @@ namespace ProtoFluxNodeDisplayMod
 	{
 		public override string Name => "ProtoFluxNodeDisplayMod";
 		public override string Author => "ginjake";
-		public override string Version => "1.1.0";
+		public override string Version => "1.2.0";
 		public override string Link => "https://github.com/ginjake/ResoniteOperatorLikeNeos";
 		
 		public static ModConfiguration Config;
@@ -45,17 +45,26 @@ namespace ProtoFluxNodeDisplayMod
 		{
 			try
 			{
-				// Patch Sync<string>.Value setter to catch when text content is actually set
-				var syncStringType = typeof(FrooxEngine.Sync<string>);
+				// Patch Sync<string>.Value setter
+				Type syncStringType = typeof(FrooxEngine.Sync<string>);
 				var valueProperty = syncStringType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
 				if (valueProperty != null)
 				{
 					var valueSetter = valueProperty.GetSetMethod();
 					if (valueSetter != null)
 					{
-						var prefix = typeof(UIPatches).GetMethod(nameof(UIPatches.SyncStringValuePrefix), BindingFlags.Static | BindingFlags.Public);
+						var prefix = typeof(UIPatches).GetMethod("SyncStringValueSetterPrefix", BindingFlags.Static | BindingFlags.Public);
 						harmony.Patch(valueSetter, prefix: new HarmonyMethod(prefix));
 					}
+				}
+				
+				// Patch ComponentSelector.BuildUI method
+				Type componentSelectorType = typeof(FrooxEngine.ComponentSelector);
+				var buildUIMethod = componentSelectorType.GetMethod("BuildUI", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				if (buildUIMethod != null)
+				{
+					var postfix = typeof(UIPatches).GetMethod("BuildUIPostfix", BindingFlags.Public | BindingFlags.Static);
+					harmony.Patch(buildUIMethod, postfix: new HarmonyMethod(postfix));
 				}
 			}
 			catch (Exception ex)
@@ -72,7 +81,7 @@ namespace ProtoFluxNodeDisplayMod
 		{
 			"Add", "AddMulti", "Sub", "SubMulti", "ValueSubMulti", "ValueSubMulti<T>",
 			"Mul", "MulMulti", "ValueMulMulti", "ValueMulMulti<T>", 
-			"Div", "ValueMod", "ValueMod<T>"
+			"Div", "ValueAddMulti<T>", "ValueDivMulti<T>", "ValueMod", "ValueMod<T>"
 		};
 		
 		// 比較演算ノード名
@@ -97,6 +106,8 @@ namespace ProtoFluxNodeDisplayMod
 			{ "ValueMulMulti", "×" },
 			{ "ValueMulMulti<T>", "×" },
 			{ "Div", "÷" },
+			{ "ValueAddMulti<T>", "+" },
+			{ "ValueDivMulti<T>", "÷" },
 			{ "ValueMod", "%" },
 			{ "ValueMod<T>", "%" },
 			
@@ -116,6 +127,9 @@ namespace ProtoFluxNodeDisplayMod
 			{ "OR_Multi", "|" },
 			{ "XOR", "^" },
 			{ "NOT", "!" },
+			{ "MultiAND", "&" },
+			{ "MultiOR", "|" },
+			{ "MultiXOR", "^" },
 			
 			// 数値変換
 			{ "ValueSquare", "x²" },
@@ -148,6 +162,9 @@ namespace ProtoFluxNodeDisplayMod
 			
 			// 制御
 			{ "Conditional", "?:" },
+			{ "MultiNullCoalesce<T>", "??" },
+			{ "NullCoalesce<T>", "??" },
+			{ "ZeroOne", "0/1" },
 			
 			// Time系
 			{ "MulDeltaTime", "×dT" },
@@ -181,28 +198,6 @@ namespace ProtoFluxNodeDisplayMod
 			return false;
 		}
 		
-		private static bool IsDescendantOfNodeBrowser(Slot slot)
-		{
-			// Check ancestors for "Node Browser" slot name
-			Slot currentSlot = slot;
-			while (currentSlot != null)
-			{
-				if (currentSlot.Name == "Node Browser")
-					return true;
-				currentSlot = currentSlot.Parent;
-			}
-			return false;
-		}
-		
-		private static bool IsTargetNodeText(string content)
-		{
-			if (string.IsNullOrEmpty(content))
-				return false;
-			
-			// Simple check - enhance any non-empty text that is descendant of ComponentSelector or Node Browser
-			// The actual filtering is done by ShouldEnhanceText method
-			return !string.IsNullOrWhiteSpace(content);
-		}
 		
 		public static string GetEnhancedTextContent(string originalContent)
 		{
@@ -221,12 +216,12 @@ namespace ProtoFluxNodeDisplayMod
 				if (_arithmeticNodes.Contains(originalContent))
 				{
 					// Format: <symbol> OriginalName
-					enhancedContent = $"({neosSymbol}) {originalContent}";
+					enhancedContent = $"<{neosSymbol}> {originalContent}";
 				}
 				else if (_comparisonNodes.Contains(originalContent))
 				{
 					// Format: (symbol) OriginalName
-					enhancedContent = $"[{neosSymbol}] {originalContent}";
+					enhancedContent = $"({neosSymbol}) {originalContent}";
 				}
 				else
 				{
@@ -296,88 +291,108 @@ namespace ProtoFluxNodeDisplayMod
 	
 	public static class UIPatches
 	{
-		public static bool SyncStringValuePrefix(FrooxEngine.Sync<string> __instance, ref string value)
+		public static bool SyncStringValueSetterPrefix(FrooxEngine.Sync<string> __instance, ref string value)
 		{
 			try
 			{
 				if (ProtoFluxNodeDisplayMod.Config?.GetValue(ProtoFluxNodeDisplayMod.enabled) != true)
 					return true;
 				
-				// Only process non-empty strings that could be node names
-				if (string.IsNullOrEmpty(value) || value.Length > 30)
-					return true;
-				
-				// Only process if we have a mapping for this value
-				if (!ProtoFluxNodeDisplayMod._resoniteToNeosMap.ContainsKey(value))
-					return true;
-				
-				// Find the Text component that owns this sync
-				var textComponent = GetTextComponentFromSync(__instance);
-				if (textComponent != null && ProtoFluxNodeDisplayMod.ShouldEnhanceText(textComponent))
+				// Text.ContentのSync<string>かどうかチェック
+				if (__instance.Worker is Text textComponent && __instance.Name == "Content")
 				{
-					string enhancedValue = ProtoFluxNodeDisplayMod.GetEnhancedTextContent(value);
-					if (enhancedValue != value)
+					if (ProtoFluxNodeDisplayMod.ShouldEnhanceText(textComponent))
 					{
-						value = enhancedValue;
-						return true;
+						if (ProtoFluxNodeDisplayMod._resoniteToNeosMap.TryGetValue(value, out string symbol))
+						{
+							string originalNodeName = value;
+							string enhancedValue = ProtoFluxNodeDisplayMod.GetEnhancedTextContent(value);
+							
+							if (enhancedValue != value)
+							{
+								value = enhancedValue;
+								textComponent.RunInUpdates(1, () => SetButtonOrderOffset(textComponent, originalNodeName));
+							}
+						}
 					}
 				}
+				
+				return true; // 元の処理を継続
 			}
 			catch (Exception ex)
 			{
-				// Silent error handling - only log critical errors
+				ProtoFluxNodeDisplayMod.Error($"Error in SyncStringValueSetterPrefix: {ex.Message}");
+				return true;
 			}
-			
-			return true;
 		}
 		
-		private static Text GetTextComponentFromSync(FrooxEngine.Sync<string> sync)
+		public static void BuildUIPostfix(FrooxEngine.ComponentSelector __instance)
 		{
 			try
 			{
-				var syncType = sync.GetType();
+				if (ProtoFluxNodeDisplayMod.Config?.GetValue(ProtoFluxNodeDisplayMod.enabled) != true)
+					return;
 				
-				// Method 1: Check _worker field in base type
-				var workerField = syncType.BaseType?.GetField("_worker", BindingFlags.NonPublic | BindingFlags.Instance);
-				if (workerField != null)
-				{
-					var worker = workerField.GetValue(sync);
-					if (worker is Text textComponent && ReferenceEquals(textComponent.Content, sync))
-					{
-						return textComponent;
-					}
-				}
+				__instance.RunInUpdates(2, () => ModifyComponentSelectorTexts(__instance));
+			}
+			catch (Exception ex)
+			{
+				ProtoFluxNodeDisplayMod.Error($"Error in BuildUIPostfix: {ex.Message}");
+			}
+		}
+		
+		private static void ModifyComponentSelectorTexts(FrooxEngine.ComponentSelector componentSelector)
+		{
+			try
+			{
+				var allTexts = componentSelector.Slot.GetComponentsInChildren<Text>();
 				
-				// Method 2: Try different field names
-				var parentField = syncType.BaseType?.GetField("_parent", BindingFlags.NonPublic | BindingFlags.Instance);
-				if (parentField != null)
+				foreach (var text in allTexts)
 				{
-					var parent = parentField.GetValue(sync);
-					if (parent is Text textComponent && ReferenceEquals(textComponent.Content, sync))
+					if (text?.Content?.Value != null)
 					{
-						return textComponent;
-					}
-				}
-				
-				// Method 3: Search all Text components in the world for this sync (fallback)
-				var world = Engine.Current?.WorldManager?.FocusedWorld;
-				if (world != null)
-				{
-					var allTexts = world.RootSlot.GetComponentsInChildren<Text>();
-					foreach (var text in allTexts)
-					{
-						if (ReferenceEquals(text.Content, sync))
+						string originalText = text.Content.Value;
+						
+						if (ProtoFluxNodeDisplayMod._resoniteToNeosMap.TryGetValue(originalText, out string symbol))
 						{
-							return text;
+							string enhancedText = ProtoFluxNodeDisplayMod.GetEnhancedTextContent(originalText);
+							if (enhancedText != originalText)
+							{
+								text.Content.Value = enhancedText;
+								SetButtonOrderOffset(text, originalText);
+							}
 						}
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				// Silent error handling
+				ProtoFluxNodeDisplayMod.Error($"Error in ModifyComponentSelectorTexts: {ex.Message}");
 			}
-			return null;
+		}
+		
+		private static void SetButtonOrderOffset(Text textComponent, string nodeName)
+		{
+			try
+			{
+				// Navigate to the Button slot (Text -> Slot -> Button)
+				var buttonSlot = textComponent.Slot.Parent;
+				if (buttonSlot?.GetComponent<FrooxEngine.UIX.Button>() != null)
+				{
+					if (ProtoFluxNodeDisplayMod._arithmeticNodes.Contains(nodeName))
+					{
+						buttonSlot.OrderOffset = 1L;
+					}
+					else if (ProtoFluxNodeDisplayMod._comparisonNodes.Contains(nodeName))
+					{
+						buttonSlot.OrderOffset = 2L;
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				ProtoFluxNodeDisplayMod.Error($"Error setting OrderOffset: {ex.Message}");
+			}
 		}
 	}
 }

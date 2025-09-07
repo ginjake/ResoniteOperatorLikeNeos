@@ -34,8 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Resonite\Libraries\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.3.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Users\ottoi\AppData\Local\RESO Launcher\profiles\premod\Game\rml_libs\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Elements.Core">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Resonite\Resonite_Data\Managed\Elements.Core.dll</HintPath>
@@ -43,8 +44,9 @@
     <Reference Include="FrooxEngine">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Resonite\Resonite_Data\Managed\FrooxEngine.dll</HintPath>
     </Reference>
-    <Reference Include="ResoniteModLoader">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Resonite\Libraries\ResoniteModLoader.dll</HintPath>
+    <Reference Include="ResoniteModLoader, Version=2025.7.8.405, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Users\ottoi\AppData\Local\RESO Launcher\profiles\premod\Game\Libraries\ResoniteModLoader.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
@@ -56,8 +58,11 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if exist "C:\Program Files (x86)\Steam\steamapps\common\Resonite\rml_mods" copy "$(TargetDir)\$(TargetFileName)" "C:\Program Files (x86)\Steam\steamapps\common\Resonite\rml_mods"</PostBuildEvent>
+    <PostBuildEvent>if exist "C:\Users\ottoi\AppData\Local\RESO Launcher\profiles\profile\Game\rml_mods" copy "$(TargetDir)\$(TargetFileName)" "C:\Users\ottoi\AppData\Local\RESO Launcher\profiles\profile\Game\rml_mods"</PostBuildEvent>
   </PropertyGroup>
 </Project>
