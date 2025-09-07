@@ -10,7 +10,10 @@
       "Bash(dotnet build)",
       "Bash(rg:*)",
       "Bash(grep:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(msbuild:*)",
+      "Bash(cp:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

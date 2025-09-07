@@ -9,6 +9,8 @@ NeosVR ⇔ Resonite ProtoFlux 対応表
 | ×          | Mul                 |
 | ×          | ValueMulMulti            |
 | ÷          | Div                 |
+| [+]        | ValueAddMulti<T>    |
+| [÷]        | ValueDivMulti<T>    |
 | %          | ValueMod            |
 | ==         | Equals              |
 | !=         | NotEquals           |
@@ -19,9 +21,12 @@ NeosVR ⇔ Resonite ProtoFlux 対応表
 | ≈          | Approximately       |
 | !≈         | ApproximatelyNot    |
 | &          | AND                 |
+| (&)        | MultiAND            |
 | |          | OR                  |
 | |          | OR_Multi            |
+| (|)        | MultiOR             |
 | ^          | XOR                 |
+| (^)        | MultiXOR            |
 | !          | NOT                 |
 | x²         | ValueSquare         |
 | x³         | ValueCube           |
@@ -41,6 +46,9 @@ NeosVR ⇔ Resonite ProtoFlux 対応表
 | ROL        | RotateLeft          |
 | ROR        | RotateRight         |
 | ?:         | Conditional         |
+| (??)       | MultiNullCoalesce<T> |
+| (??)       | NullCoalesce<T>     |
+| (0/1)      | ZeroOne             |
 
 【Time 系】
 | NeosVR     | Resonite          |
