@@ -2,7 +2,8 @@
 
 A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://store.steampowered.com/app/2519830/Resonite/)
 
-<img width="859" height="1029" alt="image" src="https://github.com/user-attachments/assets/ed9ef661-f1e1-4bf8-9523-c4c080627dbc" />
+<img width="757" height="952" alt="image" src="https://github.com/user-attachments/assets/a896e30f-f645-4e84-a2b7-7d1776265fa8" />
+
 
 
 ## What is this?
